@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Прототип статуса расписания</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#F6F5FB;--card:#FFFFFF;--ink:#1B1A2E;--mut:#6B6A80;--line:#E6E4F0;--soft:#F3F2F8;--soft2:#F7F6FB;--v:#5B4CF0;--v2:#3D35A8;--vbg:#F1EFFF;--vline:#D9D4FF;--lime:#D5F25C;--onlime:#1B1A2E;--onv:#FFFFFF;--ok:#1F9D55;--okbg:#E7F7EE;--okline:#BFE8CF;--warn:#9A6200;--warnbg:#FFF4D6;--warnline:#F3DFA6;--err:#C53030;--errbg:#FFECEC;--errline:#F3B7B7;--hl:#FFF8C7;--shadow:rgba(40,30,120,.18);--scrim:rgba(20,15,50,.35);--device:#121220;--tabicon:#E3E1EE;--toastbg:#1B1A2E;--toastfg:#FFFFFF}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121122;--card:#1C1B30;--ink:#ECEAF7;--mut:#A3A1BA;--line:#2E2C48;--soft:#24233A;--soft2:#201F35;--v:#8C80FF;--v2:#5146C9;--vbg:#26234A;--vline:#3B3670;--ok:#4CC37E;--okbg:#173326;--okline:#24543C;--warn:#E3B44F;--warnbg:#33290F;--warnline:#5A4618;--err:#F07A7A;--errbg:#3A1C1F;--errline:#6A2C30;--hl:#3A3412;--shadow:rgba(0,0,0,.5);--scrim:rgba(0,0,0,.5);--device:#000000;--tabicon:#3A3856;--toastbg:#ECEAF7;--toastfg:#1B1A2E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121122;--card:#1C1B30;--ink:#ECEAF7;--mut:#A3A1BA;--line:#2E2C48;--soft:#24233A;--soft2:#201F35;--v:#8C80FF;--v2:#5146C9;--vbg:#26234A;--vline:#3B3670;--ok:#4CC37E;--okbg:#173326;--okline:#24543C;--warn:#E3B44F;--warnbg:#33290F;--warnline:#5A4618;--err:#F07A7A;--errbg:#3A1C1F;--errline:#6A2C30;--hl:#3A3412;--shadow:rgba(0,0,0,.5);--scrim:rgba(0,0,0,.5);--device:#000000;--tabicon:#3A3856;--toastbg:#ECEAF7;--toastfg:#1B1A2E;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.42 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--v);outline-offset:2px}
+.top{background:linear-gradient(90deg,var(--v2),var(--v));color:var(--onv)}
+.top-in{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top h1{margin:0;font-size:17px;text-wrap:balance}
+.top .tag{background:var(--lime);color:var(--onlime);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+.clock{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.clock b{font-size:15px;margin-right:6px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:7px 11px}
+.btn:hover{border-color:var(--v)}
+.btn.p{background:var(--v);border-color:var(--v);color:var(--onv)}
+.btn.s{padding:4px 9px;font-size:12px;border-radius:8px}
+.btn.g{background:transparent;border-color:color-mix(in srgb,var(--onv) 55%,transparent);color:var(--onv)}
+.btn.ghost{background:transparent;border:none;color:var(--v);padding:4px 0}
+.btn.dang{border-color:var(--errline);color:var(--err)}
+.btn[disabled]{opacity:.45;cursor:default}
+.wrap{display:grid;grid-template-columns:290px 410px minmax(0,1fr);gap:18px;align-items:start;padding-block:18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-width:1180px){.wrap{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}
+.panel h2{font-size:14px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.panel h3{font-size:14px;margin:14px 0 8px}
+.prof{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 11px;margin-bottom:7px}
+.prof.on{border-color:var(--v);background:var(--vbg)}
+.prof small{display:block;color:var(--mut)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.seg button{flex:1;border:none;background:var(--card);padding:7px 4px;font-size:13px}
+.seg button.on{background:var(--v);color:var(--onv)}
+.steps{margin:6px 0 0;padding-left:18px;color:var(--mut);font-size:13px}
+.steps li{margin-bottom:4px}
+.phone{--bg:#F6F5FB;--card:#FFFFFF;--ink:#1B1A2E;--mut:#6B6A80;--line:#E6E4F0;--soft:#F3F2F8;--soft2:#F7F6FB;--v:#5B4CF0;--v2:#3D35A8;--vbg:#F1EFFF;--vline:#D9D4FF;--ok:#1F9D55;--okbg:#E7F7EE;--okline:#BFE8CF;--warn:#9A6200;--warnbg:#FFF4D6;--warnline:#F3DFA6;--err:#C53030;--errbg:#FFECEC;--errline:#F3B7B7;--scrim:rgba(20,15,50,.35);--tabicon:#E3E1EE;--toastbg:#1B1A2E;--toastfg:#FFFFFF;color-scheme:light;width:390px;max-width:100%;height:800px;border:11px solid var(--device);border-radius:46px;background:var(--card);color:var(--ink);position:relative;overflow:hidden;box-shadow:0 20px 50px var(--shadow)}
+.sbar{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.screen{position:absolute;top:34px;bottom:64px;left:0;right:0;overflow-y:auto}
+.ph-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 16px 4px}
+.ph-head h2{margin:0;font-size:24px}
+.ph-sub{padding:0 16px 8px;color:var(--mut);font-size:13px}
+.ibtn{border:none;background:var(--vbg);color:var(--v2);border-radius:12px;padding:7px 10px;font-size:13px;position:relative}
+.badge{position:absolute;top:-5px;right:-5px;background:var(--err);color:var(--onv);border-radius:999px;font-size:10px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.days{display:flex;gap:6px;padding:4px 12px 10px}
+.day{flex:1;border:none;background:var(--soft);border-radius:12px;padding:6px 0;text-align:center;font-size:12px;color:var(--mut)}
+.day b{display:block;font-size:14px;color:var(--ink)}
+.day.on{background:var(--v);color:var(--onv)}
+.day.on b{color:var(--onv)}
+.lesson{margin:0 14px 9px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:86px 1fr;gap:8px}
+.lesson .t{font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.lesson .k{font-size:11px;color:var(--v2);background:var(--vbg);border-radius:6px;padding:1px 6px;display:inline-block;margin-bottom:3px}
+.lesson .m{color:var(--mut);font-size:12px}
+.lesson.cached{opacity:.7;border-style:dashed}
+.empty{text-align:center;color:var(--mut);padding:50px 20px 20px}
+.empty b{display:block;font-size:18px;color:var(--ink);margin-bottom:4px}
+.card{margin:4px 14px 12px;border-radius:16px;padding:14px;border:1px solid var(--line)}
+.card.info{background:var(--vbg);border-color:var(--vline)}
+.card.warn{background:var(--warnbg);border-color:var(--warnline)}
+.card.okc{background:var(--okbg);border-color:var(--okline)}
+.card h4{margin:0 0 6px;font-size:16px;line-height:1.3}
+.card p{margin:0 0 8px;font-size:13px}
+.row{display:flex;gap:8px;font-size:13px;margin-bottom:5px}
+.row .l{color:var(--mut);min-width:96px}
+.card .acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.hint{margin:0 14px 10px;border:1px solid var(--vline);background:var(--card);border-radius:14px;padding:10px 12px;font-size:13px;box-shadow:0 4px 14px var(--shadow)}
+.hint .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.trouble{display:block;margin:14px auto 18px;border:none;background:none;color:var(--mut);text-decoration:underline;font-size:13px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:64px;border-top:1px solid var(--line);display:flex;background:var(--card)}
+.tabbar button{flex:1;border:none;background:none;font-size:11px;color:var(--mut);padding-top:10px}
+.tabbar button.on{color:var(--v);font-weight:600}
+.tabbar i{display:block;width:22px;height:22px;margin:0 auto 3px;border-radius:7px;background:var(--tabicon)}
+.tabbar button.on i{background:var(--v)}
+.sheetbg{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:flex-end;z-index:5}
+.sheet{background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:16px 16px 20px;max-height:92%;overflow-y:auto}
+.sheet h3{margin:0 0 10px;font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 11px;font-size:13px}
+.chip.on{background:var(--v);border-color:var(--v);color:var(--onv)}
+textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padding:9px 10px;font:inherit;resize:vertical;background:var(--card);color:var(--ink)}
+.ctx{background:var(--soft2);border-radius:12px;padding:9px 11px;font-size:12px;margin:10px 0}
+.ctx div{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.ctx div span:first-child{color:var(--mut)}
+.err{color:var(--err);font-size:13px;margin:4px 0}
+.banner{position:absolute;top:40px;left:10px;right:10px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:10px 12px;z-index:8;box-shadow:0 10px 30px var(--shadow);text-align:left;width:calc(100% - 20px)}
+.banner small{color:var(--mut)}
+.toast{position:absolute;bottom:76px;left:50%;transform:translateX(-50%);background:var(--toastbg);color:var(--toastfg);padding:8px 14px;border-radius:12px;font-size:13px;z-index:9;width:max-content;max-width:330px;text-align:center}
+.tl{margin:6px 16px 10px;padding-left:16px;border-left:2px solid var(--line)}
+.tl .st{position:relative;margin-bottom:12px}
+.tl .st:before{content:"";position:absolute;left:-23px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--line)}
+.tl .st.done:before{background:var(--ok)}
+.tl .st.now:before{background:var(--v)}
+.tl .st.bad:before{background:var(--err)}
+.tl small{display:block;color:var(--mut)}
+.reply{background:var(--vbg);border-radius:14px;padding:10px 12px;margin:6px 0;font-size:13px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 12px}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600}
+.pill{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11.5px;font-weight:600}
+.pill.ok{background:var(--okbg);color:var(--ok)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.err{background:var(--errbg);color:var(--err)}
+.pill.v{background:var(--vbg);color:var(--v)}
+.tk{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.tk.pr{border-color:var(--errline)}
+.tk .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.kv{display:grid;grid-template-columns:minmax(110px,150px) minmax(0,1fr);gap:2px 10px;font-size:12px;margin:6px 0}
+.kv span:nth-child(odd){color:var(--mut)}
+.metric{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:9px}
+.metric .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.metric .f{font-size:12px;color:var(--mut)}
+.metric.main{border-color:var(--v);background:var(--vbg)}
+.logbox{max-height:520px;overflow:auto}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+.res{padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+.res .ok{color:var(--ok);font-weight:700}
+.res .fail{color:var(--err);font-weight:700}
+.note{font-size:12px;color:var(--mut)}
+.hl{background:var(--hl)}
+.export{width:100%;min-height:180px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0"><h1>Статус расписания в точке затруднения</h1><span class="tag">Неофициальный прототип кандидата к тестовому заданию Кампуса. Данные тестовые, интеграции имитируются</span></div>
+  <div class="clock" id="clock"></div>
+</div></div>
+<div class="wrap">
+  <div class="panel" id="scenario"></div>
+  <div class="phone" id="phone"></div>
+  <div class="panel" id="side"></div>
+</div>
+<script>
+const CONFIG = {
+  startAt: '2026-09-01T08:10:00',
+  todayIndex: 1,
+  actionSeconds: 5,
+  clarityTargetMin: 60,
+  hint: { refreshCount: 2, refreshWindowSec: 60, opensCount: 3, opensWindowHours: 24, cooldownHours: 24 },
+  slaHours: { peak: 6, normal: 1.5 },
+  priorityHours: 1,
+  breachExtensionHours: 1,
+  sourceCheckEveryMin: 120,
+  incident: { suggestAtStudents: 5, defaultFixHours: 3 },
+  abandonAfterHours: 72,
+  appVersion: '4.42.1',
+  storageKey: 'kampus-status-proto-v1'
+};
+
+const DAYS = [
+  { short: 'Пн', date: '31.08' }, { short: 'Вт', date: '01.09' }, { short: 'Ср', date: '02.09' },
+  { short: 'Чт', date: '03.09' }, { short: 'Пт', date: '04.09' }, { short: 'Сб', date: '05.09' }
+];
+const SLOTS = ['08:30-10:05', '10:15-11:50', '12:00-13:35', '13:50-15:25', '15:40-17:15'];
+const PATTERN = [[0, 1, 2], [3, 0, 4], [1, 2], [4, 3, 0], [2, 1], [3]];
+
+const SUBJECTS = {
+  IU7: [['Математический анализ', 'лекция', '218л', 'Власова Е. А.'], ['Программирование на C', 'лаба', '306э', 'Ступников А. В.'], ['Физика', 'семинар', '504', 'Гладков П. С.'], ['Английский язык', 'семинар', '1104', 'Миронова К. И.'], ['Дискретная математика', 'лекция', '218л', 'Белоусов Д. Н.']],
+  EF: [['Микроэкономика', 'лекция', '3-221', 'Соколова Н. В.'], ['Статистика', 'семинар', '2-114', 'Ершов Л. М.'], ['Гражданское право', 'лекция', '1-305', 'Орлова Т. В.'], ['Английский язык', 'семинар', '4-410', 'Кравец И. О.'], ['Высшая математика', 'семинар', '2-208', 'Лапин С. Г.']],
+  KFU: [['Алгоритмы и структуры данных', 'лекция', '1308', 'Галиев Р. Ф.'], ['Базы данных', 'лаба', '1105', 'Сафина Л. Р.'], ['Теория вероятностей', 'семинар', '711', 'Шакиров А. И.'], ['Физическая культура', 'практика', 'УНИКС', 'Хабибуллин Р. Р.'], ['Английский язык', 'семинар', '1003', 'Зарипова Д. М.']],
+  MAI: [['Аэродинамика', 'лекция', '3-301', 'Никитин В. П.'], ['Начертательная геометрия', 'семинар', '24-215', 'Ковалев А. А.'], ['Химия', 'лаба', '4-112', 'Яковлева О. С.'], ['Иностранный язык', 'семинар', '3-418', 'Петрова М. Ю.'], ['История России', 'лекция', 'ГУК-501', 'Андреев Д. В.']]
+};
+
+const CATEGORIES = {
+  no_lessons: 'Пар нет, а должны быть',
+  source_has: 'На сайте вуза расписание есть',
+  mismatch: 'Пары не совпадают с сайтом вуза',
+  widget: 'Виджет показывает другое',
+  no_group: 'Не нашел свою группу',
+  other: 'Другое'
+};
+
+const REPLIES = {
+  cause: g => `Нашли причину: загрузка не поняла новый формат расписания ${g.short}. Исправим до ${fmtTime(roundUp(state.now + 2 * 3600e3))}, пришлем уведомление.`,
+  fix: g => `Исправили загрузку, расписание ${g.code} уже в приложении. Проверьте, пожалуйста, совпадает ли с сайтом вуза.`,
+  not_published: g => `Проверили сайт ${g.short}: расписания ${g.code} там пока нет. Как только вуз его опубликует, пришлем уведомление.`
+};
+
+let state = load() || seedState();
+
+function week(key) {
+  return PATTERN.map(day => day.map((si, k) => {
+    const s = SUBJECTS[key][si];
+    return { time: SLOTS[k], name: s[0], kind: s[1], room: s[2], teacher: s[3] };
+  }));
+}
+
+function seedState() {
+  const now = new Date(CONFIG.startAt).getTime();
+  return {
+    now, network: 'online', load: 'peak', userId: 'anya',
+    users: {
+      anya: { name: 'Аня', group: 'IU7', note: 'Вуз еще не опубликовал расписание' },
+      ilya: { name: 'Илья', group: 'EF', note: 'Массовый сбой загрузки, уже известен' },
+      masha: { name: 'Маша', group: 'KFU', note: 'Приложение пишет «Пар нет», причина неизвестна' },
+      kostya: { name: 'Костя', group: 'KFU', note: 'Та же проблема, но в поддержку не пишет' },
+      dima: { name: 'Дима', group: 'MAI', note: 'Все работает, контрольный профиль' }
+    },
+    groups: {
+      IU7: { code: 'ИУ7-31Б', uni: 'МГТУ им. Н. Э. Баумана', short: 'МГТУ', mode: 'not_published', lessons: null, source: week('IU7'), lastSeason: '29 августа', expectedBy: '3 сентября', loaded: 'источник пуст' },
+      EF: { code: 'ЭФ-201', uni: 'РЭУ им. Г. В. Плеханова', short: 'РЭУ', mode: 'broken', lessons: null, cached: week('EF'), cachedAt: '29 августа, 21:40', source: week('EF'), loaded: 'ошибка загрузки с 06:35' },
+      KFU: { code: '09-312', uni: 'Казанский федеральный университет', short: 'КФУ', mode: 'silent_empty', lessons: PATTERN.map(() => []), source: week('KFU'), loaded: 'загружено 31.08 в 23:10, 0 пар на неделю' },
+      MAI: { code: 'М6О-109БВ-25', uni: 'Московский авиационный институт', short: 'МАИ', mode: 'ok', lessons: week('MAI'), source: week('MAI'), loaded: 'обновлено сегодня в 07:40' }
+    },
+    incidents: {
+      'INC-1': { id: 'INC-1', group: 'EF', title: 'Не загружается расписание РЭУ им. Плеханова', cause: 'Вуз изменил формат расписания на сайте, загрузка перестала его понимать', startedAt: now - 95 * 60000, eta: new Date('2026-09-01T14:00:00').getTime(), affected: 37, subscribers: 21, status: 'active', origin: 'seed' }
+    },
+    signals: { IU7: { silent: 54, reported: 6 }, EF: { silent: 37, reported: 9 }, KFU: { silent: 11, reported: 0 }, MAI: { silent: 0, reported: 0 } },
+    episodes: {}, tickets: {}, outbox: [], drafts: {}, mutes: {}, notifications: [], events: [],
+    seq: { ticket: 1000, event: 0, incident: 1, episode: 0, note: 0 },
+    ui: { screen: 'schedule', day: CONFIG.todayIndex, sheet: null, preset: null, priority: false, formError: null, showCached: false, hint: null, toast: null, banner: null, side: 'support', ticketView: null, chip: null, tests: null, picked: null }
+  };
+}
+
+function save() { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(state)); } catch (e) { } }
+function load() { try { const s = localStorage.getItem(CONFIG.storageKey); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtTime(ms) { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const WD = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+function fmtDay(ms) { const d = new Date(ms); return `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`; }
+function fmtFull(ms) { const d = new Date(ms); return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)} ${fmtTime(ms)}`; }
+function roundUp(ms) { return Math.ceil(ms / 600000) * 600000; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function minutesBetween(a, b) { return Math.round((b - a) / 60000); }
+
+function user() { return state.users[state.userId]; }
+function groupKey() { return user().group; }
+function group(k) { return state.groups[k || groupKey()]; }
+function epKey(uid, gk) { return uid + ':' + gk; }
+function episode(uid, gk) { return state.episodes[epKey(uid || state.userId, gk || groupKey())]; }
+function episodeById(id) { return Object.values(state.episodes).find(e => e.id === id); }
+function activeIncident(gk) { return Object.values(state.incidents).find(i => i.group === gk && i.status === 'active'); }
+function userTickets(uid) { return Object.values(state.tickets).filter(t => t.userId === (uid || state.userId)).sort((a, b) => b.createdAt - a.createdAt); }
+
+function scheduleState(gk) {
+  const g = group(gk);
+  if (activeIncident(gk)) return 'incident';
+  if (g.mode === 'not_published') return 'not_published';
+  if (g.mode === 'silent_empty') return 'silent_empty';
+  if (g.mode === 'broken') return 'incident';
+  return 'ok';
+}
+
+function dayLessons(gk, day) {
+  const g = group(gk);
+  return (g.lessons && g.lessons[day]) || [];
+}
+
+function log(name, props) {
+  const p = props || {};
+  state.seq.event += 1;
+  state.events.push(Object.assign({ n: state.seq.event, ts: state.now, time: fmtFull(state.now), event: name, user_id: state.userId, group: groupKey() }, p));
+}
+
+function toast(text) { state.ui.toast = { text, at: Date.now() }; }
+
+function push(uid, title, body, target, kind) {
+  state.seq.note += 1;
+  const n = { id: 'N-' + state.seq.note, userId: uid, title, body, target: target || null, at: state.now, seen: false };
+  state.notifications.push(n);
+  log('push_sent', { user_id: uid, group: state.users[uid].group, kind: kind || 'info', title });
+  if (uid === state.userId) { n.seen = true; state.ui.banner = n; }
+}
+
+const SIGNAL = { not_published: 'empty_schedule', incident: 'load_error', silent_empty: 'empty_week', ok: 'user_report' };
+
+function ensureEpisode(gk, st) {
+  const key = epKey(state.userId, gk);
+  let ep = state.episodes[key];
+  if (ep && ep.open) return ep;
+  state.seq.episode += 1;
+  ep = { id: 'E-' + state.seq.episode, key, userId: state.userId, group: gk, startedAt: state.now, signal: SIGNAL[st] || 'user_report', clarityAt: null, claritySource: null, opens: [], refreshes: [], hintShownAt: null, hintDismissedAt: null, ticketId: null, subscribed: false, open: true, resolvedAt: null };
+  state.episodes[key] = ep;
+  log('difficulty_detected', { episode_id: ep.id, signal: ep.signal });
+  return ep;
+}
+
+function reachClarity(ep, source) {
+  if (!ep || ep.clarityAt != null) return;
+  ep.clarityAt = state.now;
+  ep.claritySource = source;
+  log('clarity_reached', { user_id: ep.userId, group: ep.group, episode_id: ep.id, source, ttc_min: minutesBetween(ep.startedAt, state.now) });
+}
+
+function lastCheckMinAgo() {
+  const sinceStart = minutesBetween(new Date(CONFIG.startAt).getTime(), state.now);
+  return (12 + sinceStart) % CONFIG.sourceCheckEveryMin;
+}
+
+function openSchedule() {
+  const gk = groupKey(), st = scheduleState(gk);
+  state.ui.screen = 'schedule';
+  state.ui.showCached = false;
+  log('schedule_viewed', { state: st, lessons_count: st === 'ok' || st === 'silent_empty' ? dayLessons(gk, state.ui.day).length : 0, day: DAYS[state.ui.day].date });
+  if (st === 'ok') { onOkView(gk); return; }
+  const ep = ensureEpisode(gk, st);
+  ep.opens.push(state.now);
+  if (st === 'not_published') {
+    log('status_card_shown', { episode_id: ep.id, cause: 'not_published', cause_known: true });
+    reachClarity(ep, 'auto_status');
+  } else if (st === 'incident') {
+    const inc = activeIncident(gk);
+    log('status_card_shown', { episode_id: ep.id, cause: 'incident', incident_id: inc ? inc.id : null, cause_known: true });
+    reachClarity(ep, 'incident_status');
+  } else {
+    maybeHint(ep);
+  }
+}
+
+function onOkView(gk) {
+  const ep = episode(state.userId, gk);
+  if (ep && ep.open) {
+    ep.open = false;
+    ep.resolvedAt = state.now;
+    log('schedule_resolved_viewed', { episode_id: ep.id, lessons_count: dayLessons(gk, state.ui.day).length, minutes_since_difficulty: minutesBetween(ep.startedAt, state.now) });
+    state.ui.chip = ep.id;
+  }
+}
+
+function maybeHint(ep) {
+  const h = CONFIG.hint, now = state.now, cool = h.cooldownHours * 3600e3;
+  if (state.mutes[ep.key] || state.ui.hint) return;
+  if (ep.hintDismissedAt && now - ep.hintDismissedAt < cool) return;
+  if (ep.hintShownAt && now - ep.hintShownAt < cool) return;
+  const refreshes = ep.refreshes.filter(t => now - t <= h.refreshWindowSec * 1000).length;
+  const opens = ep.opens.filter(t => now - t <= h.opensWindowHours * 3600e3).length;
+  if (refreshes >= h.refreshCount || opens >= h.opensCount) {
+    ep.hintShownAt = now;
+    state.ui.hint = ep.id;
+    log('hint_shown', { episode_id: ep.id, trigger: refreshes >= h.refreshCount ? 'refresh_loop' : 'repeat_opens' });
+  }
+}
+
+function refresh() {
+  const gk = groupKey(), st = scheduleState(gk);
+  log('schedule_refreshed', { state: st });
+  if (st === 'ok') { toast('Расписание актуально'); return; }
+  const ep = ensureEpisode(gk, st);
+  ep.refreshes.push(state.now);
+  if (st === 'silent_empty') maybeHint(ep);
+  toast(st === 'silent_empty' ? 'Обновлено. Пар нет' : 'Обновлено, статус тот же');
+}
+
+function hintAction(kind) {
+  const ep = episodeById(state.ui.hint);
+  state.ui.hint = null;
+  if (!ep) return;
+  if (kind === 'check') { log('hint_clicked', { episode_id: ep.id }); openReport('hint', 'no_lessons'); }
+  if (kind === 'dismiss') { ep.hintDismissedAt = state.now; log('hint_dismissed', { episode_id: ep.id }); }
+  if (kind === 'mute') { state.mutes[ep.key] = true; log('hint_muted', { episode_id: ep.id }); toast('Больше не будем подсказывать для этой группы'); }
+}
+
+function subscribe() {
+  const gk = groupKey(), st = scheduleState(gk), ep = ensureEpisode(gk, st);
+  if (st === 'incident') { joinIncident(); return; }
+  if (ep.subscribed) return;
+  ep.subscribed = true;
+  log('subscribe_clicked', { episode_id: ep.id, cause: st });
+  toast('Пришлем уведомление, как только расписание появится');
+}
+
+function joinIncident() {
+  const gk = groupKey(), inc = activeIncident(gk), ep = ensureEpisode(gk, 'incident');
+  if (!inc || ep.subscribed) { state.ui.sheet = null; return; }
+  ep.subscribed = true;
+  ep.incidentId = inc.id;
+  inc.subscribers += 1;
+  log('incident_joined', { episode_id: ep.id, incident_id: inc.id, subscribers: inc.subscribers });
+  reachClarity(ep, 'incident_status');
+  state.ui.sheet = null;
+  toast('Вы в списке. Сообщим, когда исправим');
+}
+
+function showCached() {
+  state.ui.showCached = !state.ui.showCached;
+  if (state.ui.showCached) log('cached_schedule_viewed', { episode_id: (episode() || {}).id });
+}
+
+function openReport(entry, preset) {
+  const gk = groupKey(), st = scheduleState(gk);
+  const ep = ensureEpisode(gk, st);
+  log('report_opened', { episode_id: ep.id, entry });
+  const t = ep.ticketId && state.tickets[ep.ticketId];
+  state.ui.formError = null;
+  if (t && t.status !== 'resolved') {
+    log('duplicate_report_redirected', { episode_id: ep.id, ticket_id: t.id });
+    state.ui.sheet = 'duplicate';
+    return;
+  }
+  if (activeIncident(gk) && entry !== 'incident_other') { state.ui.sheet = 'incident'; return; }
+  const draft = state.drafts[ep.key];
+  state.ui.sheet = 'report';
+  state.ui.preset = (draft && draft.category) || preset || null;
+  state.ui.picked = state.ui.preset;
+  state.ui.priority = entry === 'status_wrong';
+}
+
+function closeSheet() {
+  if (state.ui.sheet === 'report') {
+    const ep = episode();
+    const draft = ep && state.drafts[ep.key];
+    log('report_abandoned', { episode_id: ep ? ep.id : null, has_draft: !!(draft && (draft.text || draft.category)) });
+  }
+  state.ui.sheet = null;
+}
+
+function saveDraft(category, text) {
+  const ep = episode();
+  if (!ep) return;
+  state.drafts[ep.key] = { category: category || null, text: text || '' };
+}
+
+function collectContext(ep, attachDevice) {
+  const g = group(ep.group);
+  const c = {
+    'Вуз': g.uni,
+    'Группа': g.code,
+    'Что видел студент': { not_published: 'пустое расписание, статус «вуз не опубликовал»', incident: 'ошибка загрузки', silent_empty: '«Пар нет» на всю неделю', ok: 'расписание с парами' }[scheduleState(ep.group)],
+    'Данные': g.loaded,
+    'Действия до обращения': `${ep.opens.length} откр., ${ep.refreshes.length} обновл.`,
+    'Подсказка': ep.hintShownAt ? 'показана в ' + fmtTime(ep.hintShownAt) : 'не показывалась'
+  };
+  if (attachDevice) Object.assign(c, { 'Приложение': CONFIG.appVersion, 'Устройство': 'iPhone 13, iOS 18.6', 'Виджет': 'установлен, обновлен в 08:02', 'Сеть': state.network === 'online' ? 'есть' : 'нет' });
+  return c;
+}
+
+function submitReport(form) {
+  const gk = groupKey(), ep = ensureEpisode(gk, scheduleState(gk));
+  if (!form.category) {
+    state.ui.formError = 'Выберите, что не так, это поможет ответить быстрее';
+    log('report_validation_error', { episode_id: ep.id, field: 'category' });
+    return false;
+  }
+  saveDraft(form.category, form.text);
+  const draft = { episodeId: ep.id, userId: state.userId, group: gk, category: form.category, text: (form.text || '').trim(), ctx: collectContext(ep, form.attach !== false), priority: !!state.ui.priority, createdAt: state.now };
+  state.ui.formError = null;
+  if (state.network === 'offline') {
+    state.outbox.push(draft);
+    log('report_queued', { episode_id: ep.id, reason: 'offline', category: form.category });
+    state.ui.sheet = null;
+    toast('Нет сети. Сообщение сохранено и уйдет само, когда появится связь');
+    return true;
+  }
+  createTicket(draft, false);
+  return true;
+}
+
+function createTicket(d, fromRetry) {
+  state.seq.ticket += 1;
+  const id = 'T-' + state.seq.ticket;
+  const hours = d.priority ? CONFIG.priorityHours : CONFIG.slaHours[state.load];
+  const eta = roundUp(state.now + hours * 3600e3);
+  state.tickets[id] = Object.assign({}, d, { id, status: 'new', sentAt: state.now, eta, promisedEta: eta, replies: [], helped: null, breaches: 0, lastBreachEta: null, reopened: 0, info: [] });
+  const ep = episodeById(d.episodeId);
+  if (ep) ep.ticketId = id;
+  delete state.drafts[epKey(d.userId, d.group)];
+  state.signals[d.group].reported += 1;
+  const base = { user_id: d.userId, group: d.group, episode_id: d.episodeId, ticket_id: id };
+  log(fromRetry ? 'report_sent_after_retry' : 'report_submitted', Object.assign({}, base, { category: d.category, has_text: !!d.text, context_fields: Object.keys(d.ctx).length, priority: d.priority }));
+  log('ticket_created', Object.assign({}, base, { eta: fmtTime(eta), eta_min: Math.round(hours * 60), load: state.load }));
+  if (d.userId === state.userId && !fromRetry) {
+    state.ui.sheet = null;
+    state.ui.screen = 'ticket';
+    state.ui.ticketView = id;
+  }
+  return id;
+}
+
+function setNetwork(v) {
+  if (state.network === v) return;
+  state.network = v;
+  log('network_changed', { value: v });
+  if (v === 'online' && state.outbox.length) {
+    const queued = state.outbox.splice(0);
+    queued.forEach(d => createTicket(d, true));
+    toast('Связь есть. Отправили сохраненное сообщение');
+  }
+}
+
+function setLoad(v) { state.load = v; log('support_load_changed', { user_id: 'system', value: v }); }
+
+function advance(min) {
+  state.now += min * 60000;
+  tick();
+}
+
+function tick() {
+  Object.values(state.tickets).forEach(t => {
+    const waiting = !t.replies.length || t.status === 'reopened';
+    if (waiting && t.status !== 'resolved' && state.now > t.eta) {
+      t.breaches += 1;
+      const prev = t.eta;
+      t.eta = roundUp(state.now + CONFIG.breachExtensionHours * 3600e3);
+      t.priority = true;
+      log('sla_breached', { user_id: t.userId, group: t.group, ticket_id: t.id, promised: fmtTime(prev), new_eta: fmtTime(t.eta) });
+      push(t.userId, 'Отвечаем дольше, чем обещали', `Извините за задержку. Новый срок ответа до ${fmtTime(t.eta)}, обращение в приоритете.`, { screen: 'ticket', ticket: t.id }, 'sla_apology');
+    }
+  });
+}
+
+function publishSource(gk) {
+  const g = group(gk);
+  if (g.mode === 'ok') return;
+  g.mode = 'ok';
+  g.lessons = g.source;
+  g.loaded = 'опубликовано вузом в ' + fmtTime(state.now);
+  log('source_schedule_published', { user_id: 'system', group: gk });
+  notifyResolved(gk, `Расписание ${g.code} появилось`, 'Вуз опубликовал расписание, оно уже в приложении.');
+}
+
+function notifyResolved(gk, title, body) {
+  let n = 0;
+  Object.values(state.episodes).filter(e => e.group === gk && e.open && e.subscribed).forEach(e => {
+    n += 1;
+    push(e.userId, title, body, { screen: 'schedule' }, 'resolution');
+    log('resolution_notified', { user_id: e.userId, group: gk, episode_id: e.id, channel: 'push' });
+  });
+  return n;
+}
+
+function resolveIncident(id) {
+  const inc = state.incidents[id];
+  if (!inc || inc.status !== 'active') return;
+  inc.status = 'resolved';
+  inc.resolvedAt = state.now;
+  const g = group(inc.group);
+  g.mode = 'ok';
+  g.lessons = g.source;
+  g.loaded = 'исправлено в ' + fmtTime(state.now);
+  const demo = notifyResolved(inc.group, `Расписание ${g.code} снова работает`, 'Исправили загрузку. Проверьте пары на сегодня.');
+  log('incident_resolved', { user_id: 'system', group: inc.group, incident_id: id, recipients: inc.subscribers, demo_recipients: demo, minutes_open: minutesBetween(inc.startedAt, state.now) });
+}
+
+function signalCount(gk) {
+  const live = Object.values(state.episodes).filter(e => e.group === gk && e.open).length;
+  return state.signals[gk].silent + live;
+}
+
+function createIncidentFromSignals(gk) {
+  if (activeIncident(gk)) return;
+  state.seq.incident += 1;
+  const id = 'INC-' + state.seq.incident;
+  const g = group(gk);
+  const affected = signalCount(gk);
+  state.incidents[id] = { id, group: gk, title: `Пустое расписание ${g.short} ${g.code}`, cause: 'Загрузка вернула 0 пар на неделю, хотя на сайте вуза пары есть. Проверяем', startedAt: state.now, eta: roundUp(state.now + CONFIG.incident.defaultFixHours * 3600e3), affected, subscribers: 0, status: 'active', origin: 'signals' };
+  log('incident_created', { user_id: 'system', group: gk, incident_id: id, origin: 'signals', affected, reported_before: state.signals[gk].reported });
+  let sent = 0;
+  Object.values(state.episodes).filter(e => e.group === gk && e.open).forEach(e => {
+    sent += 1;
+    e.subscribed = true;
+    state.incidents[id].subscribers += 1;
+    push(e.userId, 'Похоже, расписание не загрузилось', `Мы заметили, что у ${g.code} пропали пары. Уже разбираемся, ориентир до ${fmtTime(state.incidents[id].eta)}. Писать в поддержку не нужно.`, { screen: 'schedule' }, 'proactive');
+    log('proactive_notice_sent', { user_id: e.userId, group: gk, episode_id: e.id, incident_id: id });
+    reachClarity(e, 'proactive');
+  });
+  log('proactive_notice_bulk', { user_id: 'system', group: gk, incident_id: id, silent_recipients: state.signals[gk].silent, demo_recipients: sent });
+}
+
+function agentReply(tid, kind, custom) {
+  const t = state.tickets[tid];
+  if (!t) return;
+  const g = group(t.group);
+  const text = kind === 'custom' ? (custom || '').trim() : REPLIES[kind](g);
+  if (!text) return;
+  const first = t.replies.length === 0;
+  t.replies.push({ at: state.now, text });
+  t.status = 'answered';
+  log('agent_replied', { user_id: t.userId, group: t.group, ticket_id: tid, episode_id: t.episodeId, kind, first_reply: first, ttfr_min: minutesBetween(t.sentAt, state.now), before_eta: state.now <= t.eta, before_promised: state.now <= t.promisedEta });
+  if (kind === 'fix' && g.mode !== 'ok') {
+    g.mode = 'ok';
+    g.lessons = g.source;
+    g.loaded = 'исправлено оператором в ' + fmtTime(state.now);
+    log('source_fixed', { user_id: 'system', group: t.group, ticket_id: tid });
+  }
+  reachClarity(episodeById(t.episodeId), 'agent_reply');
+  push(t.userId, 'Ответ поддержки', text.length > 90 ? text.slice(0, 88) + '...' : text, { screen: 'ticket', ticket: tid }, 'agent_reply');
+}
+
+function markHelped(tid, yes) {
+  const t = state.tickets[tid];
+  if (!t) return;
+  t.helped = yes;
+  log('helped_answered', { user_id: t.userId, group: t.group, ticket_id: tid, episode_id: t.episodeId, value: yes ? 'yes' : 'no', context: 'ticket' });
+  if (yes) {
+    t.status = 'resolved';
+    log('ticket_resolved', { user_id: t.userId, group: t.group, ticket_id: tid, by: 'student' });
+  } else {
+    t.status = 'reopened';
+    t.reopened += 1;
+    t.priority = true;
+    t.eta = roundUp(state.now + CONFIG.priorityHours * 3600e3);
+    log('ticket_reopened', { user_id: t.userId, group: t.group, ticket_id: tid, episode_id: t.episodeId, eta: fmtTime(t.eta) });
+    toast('Передали старшему специалисту, ответим до ' + fmtTime(t.eta));
+  }
+}
+
+function addInfo(tid, text) {
+  const t = state.tickets[tid];
+  if (!t || !(text || '').trim()) return;
+  t.info.push({ at: state.now, text: text.trim() });
+  log('ticket_info_added', { ticket_id: tid, episode_id: t.episodeId, length: text.trim().length });
+  toast('Добавили к обращению. Новое обращение создавать не нужно');
+}
+
+function chipAnswer(yes) {
+  const ep = episodeById(state.ui.chip);
+  state.ui.chip = null;
+  log('helped_answered', { episode_id: ep ? ep.id : null, value: yes ? 'yes' : 'no', context: 'resolution' });
+  if (!yes) openReport('resolution_chip', 'mismatch');
+}
+
+function markStatusWrong() {
+  const ep = ensureEpisode(groupKey(), scheduleState(groupKey()));
+  log('status_marked_wrong', { episode_id: ep.id, cause: scheduleState(groupKey()) });
+  openReport('status_wrong', 'source_has');
+}
+
+function switchUser(uid) {
+  state.userId = uid;
+  state.ui.sheet = null;
+  state.ui.hint = null;
+  state.ui.chip = null;
+  state.ui.day = CONFIG.todayIndex;
+  const unseen = state.notifications.filter(n => n.userId === uid && !n.seen);
+  unseen.forEach(n => { n.seen = true; });
+  state.ui.banner = unseen.length ? unseen[unseen.length - 1] : null;
+  openSchedule();
+}
+
+function openBanner() {
+  const n = state.ui.banner;
+  state.ui.banner = null;
+  if (!n) return;
+  log('push_opened', { title: n.title });
+  if (n.target && n.target.screen === 'ticket') { state.ui.screen = 'ticket'; state.ui.ticketView = n.target.ticket; }
+  else openSchedule();
+}
+
+function computeMetrics() {
+  const ev = state.events.filter(e => e.user_id !== 'system');
+  const eps = ev.filter(e => e.event === 'difficulty_detected');
+  const clar = {};
+  ev.filter(e => e.event === 'clarity_reached').forEach(e => { clar[e.episode_id] = e; });
+  const within = eps.filter(e => clar[e.episode_id] && clar[e.episode_id].ttc_min <= CONFIG.clarityTargetMin).length;
+  const ttcs = Object.values(clar).map(e => e.ttc_min).sort((a, b) => a - b);
+  const median = ttcs.length ? (ttcs.length % 2 ? ttcs[(ttcs.length - 1) / 2] : (ttcs[ttcs.length / 2 - 1] + ttcs[ttcs.length / 2]) / 2) : null;
+  const bySource = {};
+  Object.values(clar).forEach(e => { bySource[e.source] = (bySource[e.source] || 0) + 1; });
+  const helped = ev.filter(e => e.event === 'helped_answered');
+  const helpedNo = helped.filter(e => e.value === 'no').length;
+  const statusShownEps = new Set(ev.filter(e => e.event === 'status_card_shown' && e.cause_known).map(e => e.episode_id));
+  const wrong = new Set(ev.filter(e => e.event === 'status_marked_wrong').map(e => e.episode_id));
+  const hintShown = ev.filter(e => e.event === 'hint_shown').length;
+  const hintMuted = ev.filter(e => e.event === 'hint_muted').length;
+  const reportedEps = new Set(ev.filter(e => e.event === 'report_submitted' || e.event === 'report_sent_after_retry').map(e => e.episode_id));
+  const repeatEps = new Set(ev.filter(e => e.event === 'ticket_reopened' || e.event === 'duplicate_report_redirected').map(e => e.episode_id));
+  const firstReplies = ev.filter(e => e.event === 'agent_replied' && e.first_reply);
+  const kept = firstReplies.filter(e => e.before_promised).length;
+  const resolvedEps = new Set(ev.filter(e => e.event === 'schedule_resolved_viewed' || (e.event === 'helped_answered' && e.value === 'yes')).map(e => e.episode_id));
+  const abandon = eps.filter(e => !resolvedEps.has(e.episode_id) && !clar[e.episode_id] && state.now - e.ts > CONFIG.abandonAfterHours * 3600e3).length;
+  return {
+    episodes: eps.length, within, primary: eps.length ? within / eps.length : null, median, bySource,
+    helpedTotal: helped.length, helpedNo, wrongShare: statusShownEps.size ? wrong.size / statusShownEps.size : null, statusShown: statusShownEps.size, wrong: wrong.size,
+    hintShown, hintMuted, reported: reportedEps.size, repeat: [...repeatEps].filter(id => reportedEps.has(id)).length,
+    replies: firstReplies.length, kept, resolved: resolvedEps.size, abandon,
+    pending: eps.filter(e => !clar[e.episode_id]).length
+  };
+}
+
+function pct(x) { return x == null ? 'нет данных' : (x * 100).toFixed(0) + '%'; }
+
+function exportText(kind) {
+  if (kind === 'json') return JSON.stringify(state.events, null, 2);
+  const keys = [...new Set(state.events.flatMap(e => Object.keys(e)))];
+  const line = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  return [keys.join(',')].concat(state.events.map(e => keys.map(k => line(e[k])).join(','))).join('\n');
+}
+
+function copyExport() {
+  const box = document.getElementById('exportText');
+  if (!box) return;
+  const fallback = () => { toast('Текст выделен, нажмите Cmd+C или Ctrl+C'); render(); const t = document.getElementById('exportText'); if (t) { t.focus(); t.select(); } };
+  try {
+    navigator.clipboard.writeText(box.value).then(() => { toast('Скопировано в буфер обмена'); render(); }, fallback);
+  } catch (e) { fallback(); }
+}
+
+function runSelfTest() {
+  const results = [];
+  let block = '';
+  const check = (name, cond, detail) => results.push({ block, name, ok: !!cond, detail: detail || '' });
+  const count = (name, f) => state.events.filter(e => e.event === name && (!f || f(e))).length;
+  const last = name => [...state.events].reverse().find(e => e.event === name);
+  state = seedState();
+
+  block = '1. Вуз не опубликовал расписание: статус сразу, подписка, уведомление';
+  switchUser('anya');
+  check('Затруднение замечено без обращения', count('difficulty_detected', e => e.user_id === 'anya') === 1);
+  check('Показан статус с известной причиной', count('status_card_shown', e => e.user_id === 'anya' && e.cause_known) === 1);
+  check('Ясность получена сразу (0 мин)', last('clarity_reached') && last('clarity_reached').ttc_min === 0 && last('clarity_reached').source === 'auto_status');
+  subscribe();
+  check('Подписка на появление расписания', episode().subscribed && count('subscribe_clicked') === 1);
+  advance(110);
+  publishSource('IU7');
+  check('Пуш о появлении расписания', count('resolution_notified', e => e.user_id === 'anya') === 1 && state.ui.banner);
+  openBanner();
+  check('Расписание открыто, эпизод закрыт', count('schedule_resolved_viewed', e => e.user_id === 'anya') === 1 && !episode().open);
+  chipAnswer(true);
+  check('Ответ «Да, все верно» записан', count('helped_answered', e => e.value === 'yes' && e.context === 'resolution') === 1);
+
+  block = '2. Известный массовый сбой: без нового тикета';
+  switchUser('ilya');
+  check('Статус инцидента вместо пустого экрана', count('status_card_shown', e => e.user_id === 'ilya' && e.cause === 'incident') === 1);
+  const before = state.incidents['INC-1'].subscribers;
+  openReport('menu');
+  check('Кнопка «Сообщить» ведет к инциденту, а не в чат', state.ui.sheet === 'incident' && Object.keys(state.tickets).length === 0);
+  joinIncident();
+  check('Студент присоединился к инциденту', state.incidents['INC-1'].subscribers === before + 1 && count('incident_joined') === 1);
+  resolveIncident('INC-1');
+  check('После исправления пуш всем подписчикам', count('resolution_notified', e => e.user_id === 'ilya') === 1 && count('incident_resolved') === 1);
+
+  block = '3. Неизвестная причина и ошибка сети при отправке';
+  switchUser('masha');
+  check('Пустая неделя замечена как сигнал', count('difficulty_detected', e => e.user_id === 'masha' && e.signal === 'empty_week') === 1);
+  check('После одного открытия подсказки нет', count('hint_shown') === 0);
+  advance(0.2); refresh(); advance(0.2); refresh();
+  check('Два обновления подряд: мягкая подсказка', count('hint_shown', e => e.trigger === 'refresh_loop') === 1);
+  hintAction('check');
+  check('Подсказка открыла форму с подставленной категорией', state.ui.sheet === 'report' && state.ui.preset === 'no_lessons');
+  submitReport({ category: '', text: '', attach: true });
+  check('Без категории форма не отправляется и объясняет почему', count('report_validation_error') === 1 && state.ui.formError);
+  setNetwork('offline');
+  submitReport({ category: 'no_lessons', text: 'Во вторник точно есть пары, на сайте КФУ они есть', attach: true });
+  check('Нет сети: сообщение в очереди, текст не потерян', state.outbox.length === 1 && Object.keys(state.tickets).length === 0 && count('report_queued') === 1 && state.drafts[episode().key].text.length > 0);
+  setNetwork('online');
+  const tid = Object.keys(state.tickets)[0];
+  check('Связь вернулась: отправлено автоматически', count('report_sent_after_retry') === 1 && tid && state.outbox.length === 0);
+  check('Обещан срок ответа по нагрузке (пик = 6 ч)', state.tickets[tid] && state.tickets[tid].eta - state.tickets[tid].sentAt <= 6 * 3600e3 + 600000);
+  check('Контекст собран без вопросов студенту', state.tickets[tid] && Object.keys(state.tickets[tid].ctx).length >= 8);
+
+  block = '4. Повторное обращение и ненавязчивость';
+  openReport('menu');
+  check('Повторное «Сообщить» ведет в то же обращение', state.ui.sheet === 'duplicate' && Object.keys(state.tickets).length === 1);
+  state.ui.sheet = null;
+  advance(0.2); refresh(); advance(0.2); refresh();
+  check('Подсказка не повторяется в течение суток', count('hint_shown') === 1);
+  advance(25 * 60); refresh(); advance(0.2); refresh();
+  check('Через сутки при тех же сигналах может появиться снова', count('hint_shown') === 2 && state.ui.hint);
+  hintAction('mute');
+  check('«Не показывать» записано', count('hint_muted') === 1 && !state.ui.hint);
+  advance(25 * 60); refresh(); advance(0.2); refresh();
+  check('После «Не показывать» подсказки нет и через сутки', count('hint_shown') === 2);
+
+  block = '5. Обещанный срок, ответ, «не помогло»';
+  const t2 = state.tickets[tid];
+  const promised = t2.promisedEta;
+  if (state.now <= promised) advance(minutesBetween(state.now, promised) + 5);
+  tick();
+  check('Срок прошел: извинение и новый срок', count('sla_breached') >= 1 && count('push_sent', e => e.kind === 'sla_apology') >= 1);
+  agentReply(tid, 'cause');
+  check('Ответ оператора дает ясность', count('agent_replied') === 1 && last('clarity_reached').source === 'agent_reply');
+  markHelped(tid, false);
+  check('«Не помогло» переоткрывает с приоритетом и сроком 1 ч', state.tickets[tid].status === 'reopened' && state.tickets[tid].priority && count('ticket_reopened') === 1);
+  agentReply(tid, 'fix');
+  switchUser('masha');
+  check('После исправления расписание на месте', scheduleState('KFU') === 'ok' && count('schedule_resolved_viewed', e => e.user_id === 'masha') === 1);
+
+  block = '6. Молчащие студенты: ранний сигнал и проактивное уведомление';
+  group('KFU').mode = 'silent_empty';
+  group('KFU').lessons = PATTERN.map(() => []);
+  switchUser('kostya');
+  check('Костя увидел пустую неделю и никуда не писал', count('difficulty_detected', e => e.user_id === 'kostya') === 1 && !Object.values(state.tickets).some(t => t.userId === 'kostya'));
+  check('Сигналов по группе больше порога', signalCount('KFU') >= CONFIG.incident.suggestAtStudents);
+  createIncidentFromSignals('KFU');
+  check('Инцидент открыт по сигналам до обращений', count('incident_created', e => e.origin === 'signals') === 1);
+  check('Молчащий студент получил объяснение', count('proactive_notice_sent', e => e.user_id === 'kostya') === 1 && last('clarity_reached').source === 'proactive');
+
+  block = '7. Метрики считаются из журнала событий';
+  const m = computeMetrics();
+  check('Основная метрика рассчитана', m.primary != null && m.episodes >= 4, `${m.within} из ${m.episodes} эпизодов, ${pct(m.primary)}`);
+  check('Guardrails рассчитаны', m.helpedTotal >= 2 && m.hintShown === 2 && m.hintMuted === 1, `«не помогло» ${m.helpedNo} из ${m.helpedTotal}, подсказок ${m.hintShown}, отключили ${m.hintMuted}`);
+
+  state.ui.side = 'tests';
+  state.ui.tests = { at: new Date().toLocaleString('ru-RU'), results };
+  state.ui.toast = null;
+  state.ui.banner = null;
+}
+
+const ACTIONS = {
+  user: a => switchUser(a),
+  day: a => { state.ui.day = Number(a); openSchedule(); },
+  refresh: () => refresh(),
+  subscribe: () => subscribe(),
+  join: () => joinIncident(),
+  cached: () => showCached(),
+  manual: () => { log('manual_events_clicked', { episode_id: (episode() || {}).id }); toast('Откроется добавление своих событий (уже есть в приложении)'); },
+  report: a => openReport(a || 'menu'),
+  reportOther: () => openReport('incident_other'),
+  wrong: () => markStatusWrong(),
+  close: () => closeSheet(),
+  pick: a => { state.ui.picked = a; const t = document.getElementById('rtext'); saveDraft(a, t ? t.value : ''); },
+  send: () => { const t = document.getElementById('rtext'); const att = document.getElementById('ratt'); submitReport({ category: state.ui.picked, text: t ? t.value : '', attach: att ? att.checked : true }); },
+  hint: a => hintAction(a),
+  tickets: () => { state.ui.screen = 'tickets'; log('tickets_opened'); },
+  ticket: a => { state.ui.screen = 'ticket'; state.ui.ticketView = a; },
+  back: () => openSchedule(),
+  helped: a => markHelped(state.ui.ticketView, a === 'yes'),
+  info: () => { const i = document.getElementById('tinfo'); addInfo(state.ui.ticketView, i ? i.value : ''); },
+  chip: a => chipAnswer(a === 'yes'),
+  banner: () => openBanner(),
+  bannerClose: () => { state.ui.banner = null; },
+  offtab: a => { log('tab_clicked', { tab: a }); toast('Этот раздел вне прототипа'); },
+  net: a => setNetwork(a),
+  loadMode: a => setLoad(a),
+  adv: a => advance(Number(a)),
+  publish: a => publishSource(a),
+  incResolve: a => resolveIncident(a),
+  incCreate: a => createIncidentFromSignals(a),
+  reply: a => { const [tid, kind] = a.split('|'); const c = document.getElementById('cr-' + tid); agentReply(tid, kind, c ? c.value : ''); },
+  side: a => { state.ui.side = a; },
+  export: a => { state.ui.exportKind = a || null; },
+  copy: () => copyExport(),
+  reset: () => { state = seedState(); openSchedule(); },
+  selftest: () => runSelfTest()
+};
+
+const USER_ACTIONS = new Set(['day', 'refresh', 'subscribe', 'join', 'cached', 'manual', 'report', 'reportOther', 'wrong', 'send', 'hint', 'helped', 'info', 'chip', 'banner']);
+
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const act = el.dataset.act;
+  if (!ACTIONS[act]) return;
+  if (USER_ACTIONS.has(act)) state.now += CONFIG.actionSeconds * 1000;
+  ACTIONS[act](el.dataset.arg);
+  if (act !== 'copy') { save(); render(); }
+});
+
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'rtext') { saveDraft(state.ui.picked, ev.target.value); save(); }
+});
+
+function render() {
+  renderClock();
+  renderScenario();
+  renderPhone();
+  renderSide();
+  if (state.ui.toast) {
+    const at = state.ui.toast.at;
+    setTimeout(() => { if (state.ui.toast && state.ui.toast.at === at) { state.ui.toast = null; renderPhone(); } }, 2600);
+  }
+}
+
+function renderClock() {
+  document.getElementById('clock').innerHTML = `<b>${fmtDay(state.now)}, ${fmtTime(state.now)}</b>
+    <button class="btn g s" data-act="adv" data-arg="5">+5 мин</button>
+    <button class="btn g s" data-act="adv" data-arg="60">+1 ч</button>
+    <button class="btn g s" data-act="adv" data-arg="360">+6 ч</button>`;
+}
+
+function renderScenario() {
+  const u = Object.entries(state.users).map(([id, x]) => {
+    const g = state.groups[x.group];
+    const unread = state.notifications.filter(n => n.userId === id && !n.seen).length;
+    return `<button class="prof ${id === state.userId ? 'on' : ''}" data-act="user" data-arg="${id}"><b>${x.name}</b> · ${g.short} ${g.code}${unread ? ` <span class="pill v">${unread} пуш</span>` : ''}<small>${x.note}</small></button>`;
+  }).join('');
+  const iu = group('IU7');
+  document.getElementById('scenario').innerHTML = `
+    <h2>Сценарий</h2>
+    ${u}
+    <h3>Сеть телефона</h3>
+    <div class="seg"><button class="${state.network === 'online' ? 'on' : ''}" data-act="net" data-arg="online">Есть</button><button class="${state.network === 'offline' ? 'on' : ''}" data-act="net" data-arg="offline">Нет сети</button></div>
+    <h3>Нагрузка на поддержку</h3>
+    <div class="seg"><button class="${state.load === 'peak' ? 'on' : ''}" data-act="loadMode" data-arg="peak">Пик сезона</button><button class="${state.load === 'normal' ? 'on' : ''}" data-act="loadMode" data-arg="normal">Обычная</button></div>
+    <h3>Внешний мир (имитация)</h3>
+    <button class="btn s" data-act="publish" data-arg="IU7" ${iu.mode === 'ok' ? 'disabled' : ''}>МГТУ опубликовал расписание ${iu.code}</button>
+    <p class="note">Инциденты и ответы операторов в консоли справа.</p>
+    <h3>Демо за 2 минуты</h3>
+    <ol class="steps">
+      <li>Аня: статус вместо пустого экрана, «Сообщить, когда появится», затем кнопка «МГТУ опубликовал».</li>
+      <li>Маша: обновите расписание дважды, нажмите «Проверить» в подсказке, включите «Нет сети» и отправьте.</li>
+      <li>Верните сеть, ответьте Маше из консоли, нажмите +6 ч, чтобы увидеть просрочку.</li>
+      <li>Костя: откройте инцидент по сигналам в консоли, он получит объяснение, хотя никуда не писал.</li>
+      <li>Вкладки «Метрики» и «Автотест» справа.</li>
+    </ol>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><button class="btn s p" data-act="selftest">Запустить автотест</button><button class="btn s dang" data-act="reset">Сбросить демо</button></div>`;
+}
+
+function lessonHtml(l, cached) {
+  return `<div class="lesson ${cached ? 'cached' : ''}"><div class="t">${l.time}</div><div><span class="k">${l.kind}</span><div><b>${l.name}</b></div><div class="m">ауд. ${l.room} · ${l.teacher}</div></div></div>`;
+}
+
+function statusCard(gk, st) {
+  const g = group(gk), ep = episode();
+  if (st === 'not_published') {
+    const ago = lastCheckMinAgo();
+    return `<div class="card info">
+      <h4>Расписание ${g.code} еще не опубликовано вузом</h4>
+      <div class="row"><span class="l">Источник</span><span>сайт ${g.short}, проверили ${ago < 1 ? 'только что' : ago + ' мин назад'}</span></div>
+      <div class="row"><span class="l">Обычно</span><span>в прошлом семестре появилось ${g.lastSeason}, ожидаем до ${g.expectedBy}</span></div>
+      <div class="row"><span class="l">Что делаем</span><span>проверяем каждые ${CONFIG.sourceCheckEveryMin / 60} ч и сразу добавим в приложение</span></div>
+      <div class="acts">
+        <button class="btn ${ep && ep.subscribed ? '' : 'p'}" data-act="subscribe" ${ep && ep.subscribed ? 'disabled' : ''}>${ep && ep.subscribed ? 'Пришлем уведомление' : 'Сообщить, когда появится'}</button>
+        <button class="btn" data-act="manual">Добавить пары вручную</button>
+      </div>
+      <button class="btn ghost" data-act="wrong">На сайте вуза расписание уже есть?</button>
+    </div>`;
+  }
+  const inc = activeIncident(gk);
+  const known = inc ? inc : { title: 'Не загружается расписание', cause: 'Проверяем источник данных', eta: state.now + 3600e3, affected: 0, startedAt: state.now };
+  return `<div class="card warn">
+    <h4>${known.title}</h4>
+    <p>Мы уже знаем: проблема у ${known.affected} студентов с ${fmtTime(known.startedAt)}. ${known.cause}.</p>
+    <div class="row"><span class="l">Ориентир</span><span>исправим до ${fmtTime(known.eta)}</span></div>
+    <div class="row"><span class="l">Писать нужно?</span><span>нет, обращение уже учтено</span></div>
+    <div class="acts">
+      <button class="btn ${ep && ep.subscribed ? '' : 'p'}" data-act="join" ${ep && ep.subscribed ? 'disabled' : ''}>${ep && ep.subscribed ? 'Сообщим, когда исправим' : 'Сообщить, когда исправим'}</button>
+      ${g.cached ? `<button class="btn" data-act="cached">${state.ui.showCached ? 'Скрыть сохраненное' : 'Показать сохраненное'}</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function scheduleScreen() {
+  const gk = groupKey(), g = group(gk), st = scheduleState(gk);
+  const tickets = userTickets();
+  const fresh = tickets.filter(t => t.replies.length && t.status === 'answered').length;
+  let body = '';
+  if (state.ui.chip) {
+    body += `<div class="card okc"><h4>Расписание появилось</h4><p>Это ваше расписание и оно совпадает с сайтом вуза?</p><div class="acts"><button class="btn p s" data-act="chip" data-arg="yes">Да, все верно</button><button class="btn s" data-act="chip" data-arg="no">Нет, не то</button></div></div>`;
+  }
+  if (state.ui.hint) {
+    body += `<div class="hint"><b>Пар нет всю неделю.</b> Если это ошибка, сообщите, мы проверим по данным вуза.<div class="acts"><button class="btn p s" data-act="hint" data-arg="check">Проверить</button><button class="btn s" data-act="hint" data-arg="dismiss">Скрыть</button><button class="btn s" data-act="hint" data-arg="mute">Не показывать</button></div></div>`;
+  }
+  if (st === 'ok' || st === 'silent_empty') {
+    const ls = dayLessons(gk, state.ui.day);
+    body += ls.length ? ls.map(l => lessonHtml(l)).join('') : `<div class="empty"><b>Пар нет</b>Можно отдохнуть</div>`;
+  } else {
+    body += statusCard(gk, st);
+    if (st === 'incident' && state.ui.showCached && g.cached) {
+      body += `<div class="ph-sub">Сохранено ${g.cachedAt}, может отличаться от актуального</div>` + (g.cached[state.ui.day] || []).map(l => lessonHtml(l, true)).join('');
+    }
+  }
+  return `
+    <div class="ph-head"><h2>Расписание</h2><div style="display:flex;gap:6px"><button class="ibtn" data-act="refresh">Обновить</button><button class="ibtn" data-act="tickets">Обращения${fresh ? `<span class="badge">${fresh}</span>` : ''}</button></div></div>
+    <div class="ph-sub">${g.code} · ${g.uni}</div>
+    <div class="days">${DAYS.map((d, i) => `<button class="day ${i === state.ui.day ? 'on' : ''}" data-act="day" data-arg="${i}">${d.short}<b>${d.date.slice(0, 2)}</b></button>`).join('')}</div>
+    ${body}
+    <button class="trouble" data-act="report" data-arg="menu">Что-то не так с расписанием?</button>`;
+}
+
+function ticketsScreen() {
+  const ts = userTickets();
+  return `<div class="ph-head"><h2>Обращения</h2><button class="ibtn" data-act="back">Назад</button></div>
+    ${ts.length ? ts.map(t => `<button class="prof" style="width:auto;margin:0 14px 8px;display:block" data-act="ticket" data-arg="${t.id}"><b>${CATEGORIES[t.category]}</b> <span class="pill ${t.status === 'resolved' ? 'ok' : t.replies.length && t.status === 'answered' ? 'v' : 'warn'}">${statusLabel(t)}</span><small>${t.id} · ${fmtFull(t.sentAt)}</small></button>`).join('') : '<div class="empty"><b>Обращений нет</b>Если что-то не так, нажмите «Что-то не так с расписанием?»</div>'}
+    ${state.outbox.filter(d => d.userId === state.userId).map(d => `<div class="card warn"><h4>Ждет отправки</h4><p>${CATEGORIES[d.category]}. Отправим автоматически, когда появится связь.</p></div>`).join('')}`;
+}
+
+function statusLabel(t) {
+  if (t.status === 'resolved') return 'Решено';
+  if (t.status === 'reopened') return 'Переоткрыто';
+  if (t.replies.length) return 'Есть ответ';
+  return 'Проверяем';
+}
+
+function ticketScreen() {
+  const t = state.tickets[state.ui.ticketView];
+  if (!t) return ticketsScreen();
+  const replied = t.replies.length > 0;
+  const breached = t.breaches > 0 && (!replied || t.status === 'reopened');
+  const steps = [
+    `<div class="st done"><b>Получено</b><small>${fmtFull(t.sentAt)} · ${CATEGORIES[t.category]}</small></div>`,
+    `<div class="st ${replied && t.status !== 'reopened' ? 'done' : breached ? 'bad' : 'now'}"><b>${t.status === 'reopened' ? 'Передали старшему специалисту' : 'Проверяем данные вуза'}</b><small>${replied && t.status !== 'reopened' ? (t.breaches ? 'Готово, но позже обещанного срока. Извините' : 'Готово') : breached ? `Задерживаемся. Новый срок до ${fmtTime(t.eta)}, обращение в приоритете` : `Ответим до ${fmtTime(t.eta)}${t.priority ? ' (приоритет)' : state.load === 'peak' ? ', сейчас много обращений' : ''}. Писать повторно не нужно, пришлем уведомление`}</small></div>`,
+    `<div class="st ${replied ? 'done' : ''}"><b>Ответ поддержки</b>${t.replies.map(r => `<div class="reply">${esc(r.text)}<small>${fmtTime(r.at)}</small></div>`).join('')}</div>`,
+    `<div class="st ${t.status === 'resolved' ? 'done' : ''}"><b>Решено</b>${t.status === 'resolved' ? '<small>Спасибо, что подтвердили</small>' : ''}</div>`
+  ].join('');
+  const ask = replied && t.status === 'answered' && t.helped == null;
+  return `<div class="ph-head"><h2>${t.id}</h2><button class="ibtn" data-act="back">К расписанию</button></div>
+    <div class="tl">${steps}</div>
+    ${ask ? `<div class="card info"><h4>Ответ помог?</h4><div class="acts"><button class="btn p s" data-act="helped" data-arg="yes">Помогло</button><button class="btn s" data-act="helped" data-arg="no">Не помогло</button></div></div>` : ''}
+    <div style="margin:0 14px 10px"><input type="text" id="tinfo" placeholder="Добавить информацию к этому обращению"><button class="btn s" style="margin-top:6px" data-act="info">Добавить</button>
+    ${t.info.map(i => `<div class="note">Добавлено в ${fmtTime(i.at)}: ${esc(i.text)}</div>`).join('')}</div>
+    <div style="margin:0 14px 14px"><div class="note">Что мы передали поддержке</div><div class="ctx">${Object.entries(t.ctx).map(([k, v]) => `<div><span>${k}</span><span>${esc(v)}</span></div>`).join('')}${t.text ? `<div><span>Комментарий</span><span>${esc(t.text)}</span></div>` : ''}</div></div>`;
+}
+
+function sheetHtml() {
+  const s = state.ui.sheet;
+  if (!s) return '';
+  const gk = groupKey(), g = group(gk), ep = episode();
+  let inner = '';
+  if (s === 'duplicate') {
+    const t = state.tickets[ep.ticketId];
+    inner = `<h3>Вы уже сообщили об этом</h3><p>Обращение ${t.id} от ${fmtTime(t.sentAt)}: ${statusLabel(t).toLowerCase()}, ответим до ${fmtTime(t.eta)}. Новое создавать не нужно, можно дополнить это.</p>
+      <div class="acts" style="display:flex;gap:8px"><button class="btn p" data-act="ticket" data-arg="${t.id}">Открыть обращение</button><button class="btn" data-act="close">Закрыть</button></div>`;
+  } else if (s === 'incident') {
+    const inc = activeIncident(gk);
+    inner = `<h3>Мы уже знаем об этой проблеме</h3><p>${inc.title}. ${inc.cause}. Ориентир: до ${fmtTime(inc.eta)}.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="join" ${ep && ep.subscribed ? 'disabled' : ''}>${ep && ep.subscribed ? 'Вы уже в списке' : 'Сообщить мне, когда исправят'}</button><button class="btn" data-act="reportOther">У меня другая проблема</button><button class="btn" data-act="close">Закрыть</button></div>`;
+  } else {
+    const draft = (ep && state.drafts[ep.key]) || {};
+    const ctx = collectContext(ep, true);
+    inner = `<h3>Что не так с расписанием?</h3>
+      ${state.ui.priority ? '<p class="note">Похоже, наш статус ошибся. Такие обращения проверяем в первую очередь.</p>' : ''}
+      <div class="chips">${Object.entries(CATEGORIES).map(([k, v]) => `<button class="chip ${state.ui.picked === k ? 'on' : ''}" data-act="pick" data-arg="${k}">${v}</button>`).join('')}</div>
+      ${state.ui.formError ? `<div class="err">${state.ui.formError}</div>` : ''}
+      <textarea id="rtext" rows="3" placeholder="Опишите своими словами, если хотите">${esc(draft.text || '')}</textarea>
+      <div class="ctx"><div><span><b>Приложим автоматически</b></span><span></span></div>${Object.entries(ctx).map(([k, v]) => `<div><span>${k}</span><span>${esc(v)}</span></div>`).join('')}</div>
+      <label class="note"><input type="checkbox" id="ratt" checked> Приложить данные устройства и виджета</label>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn p" data-act="send">Отправить</button><button class="btn" data-act="close">Отмена</button></div>
+      <p class="note">${state.network === 'offline' ? 'Сейчас нет сети: сохраним и отправим сами, текст не потеряется.' : `Ответ обычно ${state.load === 'peak' ? 'в течение ' + CONFIG.slaHours.peak + ' ч в начале семестра' : 'в течение ' + CONFIG.slaHours.normal + ' ч'}. Срок покажем сразу после отправки.`}</p>`;
+  }
+  return `<div class="sheetbg"><div class="sheet">${inner}</div></div>`;
+}
+
+function renderPhone() {
+  const screen = state.ui.screen === 'ticket' ? ticketScreen() : state.ui.screen === 'tickets' ? ticketsScreen() : scheduleScreen();
+  const b = state.ui.banner;
+  const tabs = [['schedule', 'Расписание'], ['reviews', 'Отзывы'], ['community', 'Подслушано'], ['career', 'Работа'], ['ai', 'AI']];
+  document.getElementById('phone').innerHTML = `
+    <div class="sbar"><span>${fmtTime(state.now)}</span><span>${state.network === 'online' ? '5G' : 'нет сети'}</span></div>
+    <div class="screen">${screen}</div>
+    <div class="tabbar">${tabs.map(([k, v]) => `<button class="${k === 'schedule' ? 'on' : ''}" data-act="${k === 'schedule' ? 'back' : 'offtab'}" data-arg="${k}"><i></i>${v}</button>`).join('')}</div>
+    ${sheetHtml()}
+    ${b ? `<button class="banner" data-act="banner"><small>Расписание · сейчас</small><div><b>${esc(b.title)}</b></div><div style="font-size:13px">${esc(b.body)}</div></button>` : ''}
+    ${state.ui.toast ? `<div class="toast">${esc(state.ui.toast.text)}</div>` : ''}`;
+}
+
+function renderSide() {
+  const tabs = [['support', 'Консоль поддержки'], ['log', `Журнал (${state.events.length})`], ['metrics', 'Метрики'], ['tests', 'Автотест']];
+  const body = { support: supportHtml, log: logHtml, metrics: metricsHtml, tests: testsHtml }[state.ui.side]();
+  document.getElementById('side').innerHTML = `<div class="tabs">${tabs.map(([k, v]) => `<button class="${state.ui.side === k ? 'on' : ''}" data-act="side" data-arg="${k}">${v}</button>`).join('')}</div>${body}`;
+}
+
+function supportHtml() {
+  const rows = Object.keys(state.groups).map(gk => {
+    const g = group(gk), inc = activeIncident(gk), n = signalCount(gk), st = scheduleState(gk);
+    let cause, action = '';
+    if (inc) cause = `<span class="pill warn">${inc.id} активен</span>`;
+    else if (st === 'not_published') cause = '<span class="pill v">вуз не опубликовал</span><div class="note">студенты видят статус сами</div>';
+    else if (st === 'ok') cause = '<span class="pill ok">в порядке</span>';
+    else {
+      cause = '<span class="pill err">причина неизвестна</span>';
+      if (n >= CONFIG.incident.suggestAtStudents) action = `<div class="note hl">Похоже на массовую проблему: ${n} студентов, написали ${state.signals[gk].reported}</div><button class="btn s p" data-act="incCreate" data-arg="${gk}">Открыть инцидент и предупредить всех</button>`;
+    }
+    return `<tr><td><b>${g.short} ${g.code}</b></td><td>${n}</td><td>${state.signals[gk].reported}</td><td>${cause}${action}</td></tr>`;
+  }).join('');
+  const incs = Object.values(state.incidents).map(i => `<div class="tk"><div class="hd"><b>${i.id}. ${i.title}</b><span class="pill ${i.status === 'active' ? 'warn' : 'ok'}">${i.status === 'active' ? 'активен' : 'исправлен в ' + fmtTime(i.resolvedAt)}</span></div>
+    <div class="note">${i.cause}. С ${fmtTime(i.startedAt)}, ориентир ${fmtTime(i.eta)}, затронуто ${i.affected}, ждут уведомления ${i.subscribers}. Источник: ${i.origin === 'signals' ? 'сигналы до обращений' : 'мониторинг загрузки'}</div>
+    ${i.status === 'active' ? `<button class="btn s p" style="margin-top:6px" data-act="incResolve" data-arg="${i.id}">Исправлено, уведомить всех (${i.subscribers})</button>` : ''}</div>`).join('');
+  const tks = Object.values(state.tickets).sort((a, b) => (b.priority - a.priority) || (a.eta - b.eta)).map(t => {
+    const u = state.users[t.userId], g = group(t.group);
+    const left = minutesBetween(state.now, t.eta);
+    const waiting = !t.replies.length || t.status === 'reopened';
+    return `<div class="tk ${t.priority ? 'pr' : ''}"><div class="hd"><b>${t.id} · ${u.name}, ${g.short} ${g.code}</b><span>${t.priority ? '<span class="pill err">приоритет</span> ' : ''}<span class="pill ${t.status === 'resolved' ? 'ok' : waiting ? (left < 0 ? 'err' : 'warn') : 'v'}">${t.status === 'resolved' ? 'решено' : waiting ? (left < 0 ? 'просрочено' : `ответить до ${fmtTime(t.eta)}`) : 'ответ отправлен'}</span></span></div>
+      <div><b>${CATEGORIES[t.category]}</b>${t.text ? `: «${esc(t.text)}»` : ''}</div>
+      <div class="kv">${Object.entries(t.ctx).map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join('')}</div>
+      ${t.info.map(i => `<div class="note">Студент дополнил: ${esc(i.text)}</div>`).join('')}
+      ${t.replies.map(r => `<div class="reply">${esc(r.text)}</div>`).join('')}
+      ${t.status !== 'resolved' ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn s" data-act="reply" data-arg="${t.id}|cause">Причина и срок</button>
+        <button class="btn s" data-act="reply" data-arg="${t.id}|fix">Исправили</button>
+        <button class="btn s" data-act="reply" data-arg="${t.id}|not_published">Вуз не опубликовал</button></div>
+        <div style="display:flex;gap:6px;margin-top:6px"><input type="text" id="cr-${t.id}" placeholder="Свой ответ"><button class="btn s" data-act="reply" data-arg="${t.id}|custom">Ответить</button></div>` : ''}
+    </div>`;
+  }).join('');
+  return `<p class="note">Имитация рабочего места оператора. Нагрузка: ${state.load === 'peak' ? `пик сезона, обещаем ответ за ${CONFIG.slaHours.peak} ч` : `обычная, обещаем ответ за ${CONFIG.slaHours.normal} ч`}.</p>
+    <h3>Сигналы до обращений, последний час</h3>
+    <div class="tw"><table><tr><th>Группа</th><th>Видят затруднение</th><th>Написали</th><th>Причина и действие</th></tr>${rows}</table></div>
+    <p class="note">Счетчики включают демо-фон: молчащих студентов, которых нет в списке профилей.</p>
+    <h3>Инциденты</h3>${incs || '<p class="note">Нет</p>'}
+    <h3>Обращения</h3>${tks || '<p class="note">Пока нет. Отправьте сообщение из телефона.</p>'}`;
+}
+
+function logHtml() {
+  const rows = [...state.events].reverse().slice(0, 300).map(e => {
+    const extra = Object.entries(e).filter(([k]) => !['n', 'ts', 'time', 'event', 'user_id', 'group'].includes(k)).map(([k, v]) => `${k}=${v}`).join(' ');
+    return `<tr><td class="mono">${e.time}</td><td><b>${e.event}</b></td><td>${e.user_id}</td><td class="mono">${esc(extra)}</td></tr>`;
+  }).join('');
+  const kind = state.ui.exportKind;
+  return `<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><button class="btn s ${kind === 'json' ? 'p' : ''}" data-act="export" data-arg="json">Показать JSON</button><button class="btn s ${kind === 'csv' ? 'p' : ''}" data-act="export" data-arg="csv">Показать CSV</button>${kind ? '<button class="btn s" data-act="copy">Скопировать</button><button class="btn s" data-act="export" data-arg="">Скрыть</button>' : ''}<span class="note">Журнал хранится в этом браузере, демо-данные</span></div>
+    ${kind ? `<textarea id="exportText" class="export" readonly>${esc(exportText(kind))}</textarea>` : ''}
+    <div class="logbox"><table><tr><th>Время (симуляция)</th><th>Событие</th><th>Кто</th><th>Свойства</th></tr>${rows || '<tr><td colspan="4" class="note">Пусто</td></tr>'}</table></div>`;
+}
+
+function metricsHtml() {
+  const m = computeMetrics();
+  const src = { auto_status: 'авто-статус', incident_status: 'статус инцидента', agent_reply: 'ответ оператора', proactive: 'проактивное уведомление' };
+  return `<p class="note">Демонстрационные данные этого прогона, не измерения. Считается только из журнала событий, без фоновых счетчиков.</p>
+    <div class="metric main"><div>Основная: ясность не позже ${CONFIG.clarityTargetMin} мин после затруднения</div><div class="v">${pct(m.primary)}</div>
+      <div class="f">${m.within} из ${m.episodes} эпизодов. Формула: эпизоды, где clarity_reached.ttc_min &lt;= ${CONFIG.clarityTargetMin} / эпизоды с difficulty_detected. Медиана ttc: ${m.median == null ? 'нет данных' : m.median + ' мин'}. Еще без ясности: ${m.pending}</div>
+      <div class="f">Источник ясности: ${Object.entries(m.bySource).map(([k, v]) => `${src[k] || k} ${v}`).join(', ') || 'нет'}</div></div>
+    <div class="metric"><div>«Не помогло»</div><div class="v">${m.helpedTotal ? pct(m.helpedNo / m.helpedTotal) : 'нет данных'}</div><div class="f">${m.helpedNo} из ${m.helpedTotal} ответов helped_answered. Порог пилота: не больше 25%</div></div>
+    <div class="metric"><div>Ошибочный статус</div><div class="v">${pct(m.wrongShare)}</div><div class="f">status_marked_wrong ${m.wrong} / эпизоды со status_card_shown(cause_known) ${m.statusShown}. Порог: не больше 10%</div></div>
+    <div class="metric"><div>Навязчивость подсказки</div><div class="v">${m.hintShown ? pct(m.hintMuted / m.hintShown) : 'нет данных'}</div><div class="f">hint_muted ${m.hintMuted} / hint_shown ${m.hintShown}. Правило: не чаще раза в ${CONFIG.hint.cooldownHours} ч на эпизод. Порог: не больше 5%</div></div>
+    <div class="metric"><div>Повторное обращение по эпизоду</div><div class="v">${m.reported ? pct(m.repeat / m.reported) : 'нет данных'}</div><div class="f">эпизоды с ticket_reopened или duplicate_report_redirected ${m.repeat} / эпизоды с обращением ${m.reported}</div></div>
+    <div class="metric"><div>Обещанный срок выполнен</div><div class="v">${m.replies ? pct(m.kept / m.replies) : 'нет данных'}</div><div class="f">первые ответы до eta ${m.kept} / первые ответы ${m.replies}. Порог: не меньше 90%</div></div>
+    <div class="metric"><div>Признак решения и тихий отказ</div><div class="v">${m.resolved} / ${m.abandon}</div><div class="f">Решено: эпизоды со schedule_resolved_viewed или helped_answered(yes). Тихий отказ: эпизоды без ясности и без решения дольше ${CONFIG.abandonAfterHours} ч</div></div>`;
+}
+
+function testsHtml() {
+  const t = state.ui.tests;
+  if (!t) return `<p>Автотест прогоняет 7 сценариев через те же функции, что и интерфейс, и проверяет состояние и журнал событий.</p><button class="btn p" data-act="selftest">Запустить автотест</button><p class="note">Текущее демо будет сброшено, после теста журнал и консоль покажут результат прогона.</p>`;
+  const ok = t.results.filter(r => r.ok).length;
+  let blk = '';
+  const rows = t.results.map(r => {
+    const h = r.block !== blk ? `<div style="margin-top:10px"><b>${r.block}</b></div>` : '';
+    blk = r.block;
+    return h + `<div class="res"><span class="${r.ok ? 'ok' : 'fail'}">${r.ok ? 'OK' : 'FAIL'}</span> ${r.name}${r.detail ? ` <span class="note">(${esc(r.detail)})</span>` : ''}</div>`;
+  }).join('');
+  return `<div class="metric ${ok === t.results.length ? 'main' : ''}"><div class="v">${ok} из ${t.results.length} проверок</div><div class="f">Прогон ${t.at}. Журнал событий и консоль показывают состояние после теста.</div></div>${rows}<button class="btn s" style="margin-top:10px" data-act="selftest">Запустить еще раз</button>`;
+}
+
+if (!state.events.length) openSchedule();
+render();
+</script>
+</body>
+</html>
